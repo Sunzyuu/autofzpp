@@ -1,0 +1,4 @@
+[console_scripts]
+autofz = autofz.main:main
+autofz-draw = draw.draw_main:main
+

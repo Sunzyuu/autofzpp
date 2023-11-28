@@ -1,0 +1,11 @@
+Metadata-Version: 1.2
+Name: autofz
+Version: 0.1
+Summary: a meta fuzzer for automated fuzzer composition at runtime
+Home-page: https://github.com/sslab-gatech/autofz
+Author: Yu-Fu Fu
+Author-email: yufu@gatech.edu
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.9.4
