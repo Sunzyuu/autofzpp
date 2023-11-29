@@ -321,6 +321,28 @@ CONFIG: Dict = {
             },
             'unsupported': ['libfuzzer']
         },
+        'pdftotext3': {
+            'group': 'unibench',
+            'seed': '/seeds/unibench/general_evaluation/pdf',
+            'input_model': 'pdf.xml',
+            'dict': 'pdf.dict',
+            'code_dir': 'unibench/xpdf-3.02',
+            'args': {
+                'default': '@@ /dev/null',
+            },
+            'unsupported': ['libfuzzer']
+        },
+        'pdfimages': {
+            'group': 'unibench',
+            'seed': '/seeds/unibench/general_evaluation/pdf',
+            'input_model': 'pdf.xml',
+            'dict': 'pdf.dict',
+            'code_dir': 'unibench/xpdf-3.02',
+            'args': {
+                'default': '@@ /dev/null',
+            },
+            'unsupported': ['libfuzzer']
+        },
         'sqlite3': {
             'group': 'unibench',
             'seed': '/seeds/unibench/general_evaluation/pdf',
