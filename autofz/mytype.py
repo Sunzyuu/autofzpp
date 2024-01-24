@@ -10,10 +10,12 @@ Coverage = Dict[str, Any]
 BitmapContribution = Dict[Fuzzer, Bitmap]
 
 
+#TODO
 class FuzzerType(enum.Enum):
     AFL = 'afl'
     AFLFAST = 'aflfast'
     MOPT = 'mopt'
+    SEAMFUZZ = 'seamfuzz'
     AFLSMART = 'aflsmart'
     FAIRFUZZ = 'fairfuzz'
     LEARNAFL = 'learnafl'

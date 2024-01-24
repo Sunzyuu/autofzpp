@@ -348,6 +348,7 @@ def get_watcher(config: WatcherConfig) -> Watcher:
 
     # todo
     if (config.fuzzer == FuzzerType.AFL or config.fuzzer == FuzzerType.AFLFAST
+            or config.fuzzer == FuzzerType.SEAMFUZZ
             or config.fuzzer == FuzzerType.MOPT
             or config.fuzzer == FuzzerType.AFLSMART
             or config.fuzzer == FuzzerType.FAIRFUZZ

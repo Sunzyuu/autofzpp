@@ -90,7 +90,7 @@ def is_exe(fpath):
 
 # todo
 def is_afl_based(fuzzer: Fuzzer) -> bool:
-    if (fuzzer == FuzzerType.AFL or fuzzer == FuzzerType.AFLFAST or fuzzer == FuzzerType.AFLSMART
+    if (fuzzer == FuzzerType.AFL or fuzzer == FuzzerType.AFLFAST or fuzzer == FuzzerType.AFLSMART or fuzzer == FuzzerType.SEAMFUZZ
             or fuzzer == FuzzerType.MOPT or fuzzer == FuzzerType.FAIRFUZZ
             or fuzzer == FuzzerType.LEARNAFL or fuzzer == FuzzerType.RADAMSA
             or fuzzer == FuzzerType.REDQUEEN or fuzzer == FuzzerType.LAFINTEL):
@@ -99,7 +99,7 @@ def is_afl_based(fuzzer: Fuzzer) -> bool:
 
 # todo
 def fuzzer_has_subdir(fuzzer: FuzzerType) -> bool:
-    if (fuzzer == FuzzerType.AFL or fuzzer == FuzzerType.AFLFAST or fuzzer == FuzzerType.AFLSMART
+    if (fuzzer == FuzzerType.AFL or fuzzer == FuzzerType.AFLFAST or fuzzer == FuzzerType.AFLSMART or fuzzer == FuzzerType.SEAMFUZZ
             or fuzzer == FuzzerType.MOPT or fuzzer == FuzzerType.FAIRFUZZ
             or fuzzer == FuzzerType.LEARNAFL or fuzzer == FuzzerType.RADAMSA
             or fuzzer == FuzzerType.REDQUEEN or fuzzer == FuzzerType.LAFINTEL

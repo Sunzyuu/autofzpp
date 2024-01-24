@@ -81,6 +81,14 @@ CONFIG: Dict = {
             'target_root': '/d/p/justafl',
             'afl_based': True,
         },
+        'seamfuzz': {
+            'input_dir': INPUT_DIR,
+            'crash_dir': CRASH_DIR,
+            'skip_crash_file': ['README.txt'],
+            'command': '/fuzzer/seamfuzz/fuzzers/seamfuzz/afl/afl-fuzz',
+            'target_root': '/d/p/justafl',
+            'afl_based': True,
+        },
         'learnafl': {
             'input_dir': INPUT_DIR,
             'crash_dir': CRASH_DIR,
@@ -610,12 +618,12 @@ CONFIG: Dict = {
 }
 
 FUZZERS_AFL = [
-    'afl', 'aflfast', 'fairfuzz', 'aflsmart', 'mopt', 'lafintel', 'learnafl', 'redqueen',
+    'afl', 'aflfast', 'fairfuzz', 'aflsmart', 'mopt', 'seamfuzz', 'lafintel', 'learnafl', 'redqueen',
     'radamsa', 'qsym'
 ]
 
 FUZZERS = [
-    'afl', 'aflfast', 'fairfuzz', 'aflsmart', 'mopt', 'lafintel', 'learnafl', 'redqueen',
+    'afl', 'aflfast', 'fairfuzz', 'aflsmart', 'mopt', 'seamfuzz', 'lafintel', 'learnafl', 'redqueen',
     'radamsa', 'qsym', 'angora', 'libfuzzer'
 ]
 

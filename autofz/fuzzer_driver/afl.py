@@ -320,6 +320,29 @@ class AFLSMART(AFLBase):
         args += self.argument.split(' ')
         return args
 
+# seamfuzz
+class SEAMFUZZ(AFLBase):
+    @property
+    def afl_command(self):
+        global FUZZER_CONFIG
+        return FUZZER_CONFIG['seamfuzz']['command']
+
+    def gen_run_args(self):
+        self.check()
+        args = []
+        if self.cgroup_path:
+            args += ['cgexec', '-g', f'cpu:{self.cgroup_path}']
+        args += [self.afl_command, '-K 1', '-A', '/fuzzer/seamfuzz/fuzzers/seamfuzz/afl/thompson.py', '-i', self.seed, '-o', self.output]
+        args += ['-m', 'none']
+        args += ['-t', '1000+']
+        args += ['-M'] if self.master else ['-S']
+        args += [self.name]
+        args += ['--', self.target]
+        args += self.argument.split(' ')
+
+        print(args)
+        return args
+
 
 class MOPT(AFLBase):
     @property
@@ -692,6 +715,13 @@ class AFLFASTController(AFLBasedController):
         self.db = peewee.SqliteDatabase(
             os.path.join(Config.DATABASE_DIR, 'autofz-aflfast.db'))
 
+class SEAMFUZZController(AFLBasedController):
+    def __init__(self, seed, output, group, program, argument, thread,
+                 cgroup_path):
+        super().__init__(SEAMFUZZ, 'seamfuzz', seed, output, group, program, argument,
+                         cgroup_path)
+        self.db = peewee.SqliteDatabase(
+            os.path.join(Config.DATABASE_DIR, 'autofz-seamfuzz.db'))
 
 class MOPTController(AFLBasedController):
     def __init__(self, seed, output, group, program, argument, thread,
