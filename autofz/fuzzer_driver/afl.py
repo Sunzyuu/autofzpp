@@ -339,8 +339,6 @@ class SEAMFUZZ(AFLBase):
         args += [self.name]
         args += ['--', self.target]
         args += self.argument.split(' ')
-
-        print(args)
         return args
 
 
