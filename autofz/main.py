@@ -450,7 +450,7 @@ def maybe_get_fuzzer_info(fuzzers) -> Optional[Coverage]:
         new_fuzzer_info['bitmap'][fuzzer] = bitmap
         line_coverage = cov['line_coverage']
         line = cov['line']
-        logger.info(
+        logger.debug(
             f'{fuzzer} has line_coverge {line_coverage} line {line}, bugs {unique_bugs}'
         )
 
@@ -468,7 +468,7 @@ def maybe_get_fuzzer_info(fuzzers) -> Optional[Coverage]:
     new_fuzzer_info['global_coverage'] = cov
     new_fuzzer_info['global_unique_bugs'] = unique_bugs
     new_fuzzer_info['global_bitmap'] = bitmap
-    logger.info(f'global has line_coverge {cov["line"]}, bugs {unique_bugs}')
+    logger.debug(f'global has line_coverge {cov["line"]}, bugs {unique_bugs}')
 
     return new_fuzzer_info
 
