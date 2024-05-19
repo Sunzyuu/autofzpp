@@ -59,6 +59,8 @@ COVERAGE_UPDATE_TIME = config['scheduler']['coverage_update_time']
 
 FUZZERS: Fuzzers = []
 
+QSYM: Fuzzers = []
+
 TARGET: str
 
 CPU_ASSIGN: Dict[Fuzzer, float] = {}
@@ -396,18 +398,26 @@ def resume(fuzzer, jobs=1, input_dir=None, empty_seed=False):
 
 
 def do_sync(fuzzers: Fuzzers, host_root_dir: Path) -> bool:
+    global QSYM
     logger.info('do sync once')
-    fuzzer_info = maybe_get_fuzzer_info(fuzzers)
+    logger.info(fuzzers)
+    temp_fuzzers = fuzzers.copy()
+    if len(QSYM) > 0:
+        for fuzzer in QSYM:
+            temp_fuzzers.append(fuzzer)
+    logger.info(temp_fuzzers)
+    logger.info(fuzzers)
+
+    fuzzer_info = maybe_get_fuzzer_info(temp_fuzzers)
     if not fuzzer_info:
         return False
     start_time = time.time()
-    sync.sync2(TARGET, fuzzers, host_root_dir)
+    sync.sync2(TARGET, temp_fuzzers, host_root_dir)
     end_time = time.time()
     diff = end_time - start_time
     if IS_PROFILE: logger.info(f'sync take {diff} seconds')
     coverage.sync()
     return True
-
 
 def update_fuzzer_log(fuzzers):
     global LOG
@@ -796,6 +806,8 @@ class Schedule_Base(SchedulingAlgorithm):
                 update_fuzzer_limit(fuzzer, JOBS / num_prep)
             else:
                 update_fuzzer_limit(fuzzer, 0)
+        for fuzzer in QSYM:
+            update_fuzzer_limit(fuzzer, 1)
 
         remain_time = prep_time
         while remain_time > 0:
@@ -859,7 +871,12 @@ class Schedule_Base(SchedulingAlgorithm):
         for fuzzer in FUZZERS:
             if fuzzer not in new_cpu_assign:
                 update_fuzzer_limit(fuzzer, 0)
+        # 分配给qsym 的cpu永远为1
+        for fuzzer in QSYM:
+            update_fuzzer_limit(fuzzer, 1)
+        # 框架停止运行，给fuzzer运行 focus_time 的时间
         sleep(focus_time)
+        # 函数返回结果是新一轮的global_bitmap是否比上一轮的global_bitmap大
         return self.find_new_bitmap()
 
     def focus_one(self, focus_fuzzer):
@@ -1174,6 +1191,9 @@ class Schedule_Autofz(Schedule_Base):
 
         global OUTPUT
         do_sync(self.fuzzers, OUTPUT)
+
+        # logger.info("one_round fuzzers")
+        # logger.info(self.fuzzers)
         if self.first_round:
             fuzzer_info = empty_fuzzer_info(self.fuzzers)
         else:
@@ -1248,6 +1268,7 @@ class Schedule_Autofz(Schedule_Base):
         logger.info(f'round {self.round_num} focus phase')
         # NOTE: focus phase
         if PARALLEL:
+            # 进入focus运行阶段
             find_new = self.focus_cpu_assign_parallel(
                 cpu_assign, self.dynamic_focus_time_round)
         else:
@@ -1377,7 +1398,7 @@ def main():
     global RUNNING
     global PARALLEL
     random.seed()
-    delete_folder("/tmp/pycharm_project_53/autofz/output")
+    delete_folder("/tmp/pycharm_project_923/output")
     ARGS = cli.ArgsParser().parse_args()
     TARGET = ARGS.target
     unsuppored_fuzzers = config['target'][TARGET].get('unsupported', [])
@@ -1426,7 +1447,7 @@ def main():
     JOBS = ARGS.jobs
     timeout = ARGS.timeout
     PARALLEL = ARGS.parallel
-
+    # 初始化eval文件夹下内容，包含各个fuzzer运行所需要的文件
     coverage.thread_run_global(TARGET,
                                FUZZERS,
                                OUTPUT,
@@ -1507,6 +1528,21 @@ def main():
 
     scheduler = None
     algorithm = None
+
+    # 到这里已经完成了所有fuzzer的启动过程，还有文件监视器的启动
+    if 'qsym' in FUZZERS or 'angora' in FUZZERS:
+        if 'qsym' in FUZZERS:
+            FUZZERS.remove('qsym')
+            QSYM.append("qsym")
+            JOBS = JOBS - 1
+
+        if 'angora' in FUZZERS:
+            FUZZERS.remove('angora')
+            QSYM.append("angora")
+            JOBS = JOBS - 1
+    logger.info(f'FUZZERS: {FUZZERS}')
+    logger.info(f'FUZZERS: {QSYM}')
+    # 这里剔除混合模糊测试器 qsym angora，这样后面的cpu资源分配就与这两个fuzzer无关了
 
     # foucs one fuzzer; equal to running a single individual fuzzer
     if ARGS.focus_one:
