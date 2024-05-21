@@ -397,7 +397,7 @@ def resume(fuzzer, jobs=1, input_dir=None, empty_seed=False):
     fuzzer_driver.main(**kw)
 
 
-def do_sync(fuzzers: Fuzzers, host_root_dir: Path) -> bool:
+def do_sync(fuzzers: Fuzzers, host_root_dir: Path):
     global QSYM
     logger.info('do sync once')
     logger.info(fuzzers)
@@ -405,19 +405,19 @@ def do_sync(fuzzers: Fuzzers, host_root_dir: Path) -> bool:
     if len(QSYM) > 0:
         for fuzzer in QSYM:
             temp_fuzzers.append(fuzzer)
-    logger.info(temp_fuzzers)
-    logger.info(fuzzers)
+    # logger.info(temp_fuzzers)
+    # logger.info(fuzzers)
 
     fuzzer_info = maybe_get_fuzzer_info(temp_fuzzers)
     if not fuzzer_info:
         return False
     start_time = time.time()
-    sync.sync2(TARGET, temp_fuzzers, host_root_dir)
+    seed_sync_count = sync.sync2(TARGET, temp_fuzzers, host_root_dir)
     end_time = time.time()
     diff = end_time - start_time
     if IS_PROFILE: logger.info(f'sync take {diff} seconds')
     coverage.sync()
-    return True
+    return True, seed_sync_count
 
 def update_fuzzer_log(fuzzers):
     global LOG
@@ -1190,7 +1190,8 @@ class Schedule_Autofz(Schedule_Base):
         self.diff_threshold_round = self.diff_threshold
 
         global OUTPUT
-        do_sync(self.fuzzers, OUTPUT)
+        sync_success, seed_sync_count = do_sync(self.fuzzers, OUTPUT)
+        logger.info(f'seed_sync_count: {seed_sync_count}')
 
         # logger.info("one_round fuzzers")
         # logger.info(self.fuzzers)
@@ -1289,6 +1290,7 @@ class Schedule_Autofz(Schedule_Base):
         assert (self.dynamic_prep_time_round +
                 self.dynamic_focus_time_round) == (self.prep_time +
                                                    self.focus_time)
+        # focus_time =
 
         append_log(
             'round', {
@@ -1314,6 +1316,8 @@ class Schedule_Autofz(Schedule_Base):
                 self.dynamic_focus_time_round,
                 'first_round':
                 self.first_round,
+                'seed_sync_count':
+                seed_sync_count,
                 'before_prep_fuzzer_info':
                 compress_fuzzer_info(self.fuzzers,
                                      self.before_prep_fuzzer_info),
@@ -1531,17 +1535,17 @@ def main():
 
     # 到这里已经完成了所有fuzzer的启动过程，还有文件监视器的启动
     if 'qsym' in FUZZERS or 'angora' in FUZZERS:
-        if 'qsym' in FUZZERS:
+        if 'qsym' in FUZZERS and JOBS >= 2:
             FUZZERS.remove('qsym')
             QSYM.append("qsym")
             JOBS = JOBS - 1
 
-        if 'angora' in FUZZERS:
+        if 'angora' in FUZZERS and JOBS >= 2:
             FUZZERS.remove('angora')
             QSYM.append("angora")
             JOBS = JOBS - 1
     logger.info(f'FUZZERS: {FUZZERS}')
-    logger.info(f'FUZZERS: {QSYM}')
+    logger.info(f'DSE: {QSYM}')
     # 这里剔除混合模糊测试器 qsym angora，这样后面的cpu资源分配就与这两个fuzzer无关了
 
     # foucs one fuzzer; equal to running a single individual fuzzer

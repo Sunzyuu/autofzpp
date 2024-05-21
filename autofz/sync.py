@@ -148,6 +148,9 @@ def sync_test_case(target, fuzzer, host_root_dir, testcase):
 def sync2(target: str, fuzzers: Fuzzers, host_root_dir: Path):
     global LAST_INDEX
     global WATCHERS
+
+    # 记录种子同步次数
+    seed_sync_count = 0
     # init observer
     # scan all before observer init or make sure observer init first
     init(target, fuzzers, host_root_dir)
@@ -203,12 +206,14 @@ def sync2(target: str, fuzzers: Fuzzers, host_root_dir: Path):
             if test_case.checksum not in processed_checksum[fuzzer]:
                 processed_checksum[fuzzer].add(test_case.checksum)
                 # do sync!
+                seed_sync_count = seed_sync_count + 1
                 sync_test_case(target, fuzzer, host_root_dir, test_case)
 
     del global_new_test_cases
     del new_test_cases
     # wait some file system writing, doesn't affect our symbolic link but for fuzzers
     time.sleep(0.1)
+    return seed_sync_count
 
 
 def test():
