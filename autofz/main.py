@@ -55,6 +55,8 @@ FOCUS_TIME: int
 
 SYNC_TIME: int
 
+SYNC_SEED: bool
+
 COVERAGE_UPDATE_TIME = config['scheduler']['coverage_update_time']
 
 FUZZERS: Fuzzers = []
@@ -1190,10 +1192,14 @@ class Schedule_Autofz(Schedule_Base):
         round_start_time = time.time()
         self.diff_threshold_round = self.diff_threshold
 
-        global OUTPUT
-        sync_success, seed_sync_count1 = do_sync(self.fuzzers, OUTPUT)
-        logger.info(f'pre_seed_sync_count: {seed_sync_count1}')
-        self.seed_all_sync_count += seed_sync_count1
+        global OUTPUT, SYNC_SEED
+        seed_sync_count1 = 0
+        seed_sync_count2 = 0
+        if SYNC_SEED:
+            sync_success, seed_sync_count1 = do_sync(self.fuzzers, OUTPUT)
+            logger.info(f'pre_seed_sync_count: {seed_sync_count1}')
+            self.seed_all_sync_count += seed_sync_count1
+
 
         # logger.info("one_round fuzzers")
         # logger.info(self.fuzzers)
@@ -1254,10 +1260,11 @@ class Schedule_Autofz(Schedule_Base):
         # focus session
         self.cov_before_focus = after_prep_fuzzer_info
 
-        sync_success, seed_sync_count2 = do_sync(self.fuzzers, OUTPUT)
-        logger.info(f'focus_seed_sync_count: {seed_sync_count2}')
+        if SYNC_SEED:
+            sync_success, seed_sync_count2 = do_sync(self.fuzzers, OUTPUT)
+            logger.info(f'focus_seed_sync_count: {seed_sync_count2}')
+            self.seed_all_sync_count += seed_sync_count2
         logger.info(f'all_seed_sync_count: {self.seed_all_sync_count}')
-        self.seed_all_sync_count += seed_sync_count2
         seed_sync_count = seed_sync_count1 + seed_sync_count2
 
         if has_winner:
@@ -1402,7 +1409,7 @@ def init_cgroup():
 
 
 def main():
-    global LOG, ARGS, TARGET, FUZZERS, TARGET, SYNC_TIME, PREP_TIME
+    global LOG, ARGS, TARGET, FUZZERS, TARGET, SYNC_TIME, PREP_TIME, SYNC_SEED
     global FOCUS_TIME, JOBS, OUTPUT, INPUT, LOG_DATETIME, LOG_FILE_NAME
     global CPU_ASSIGN
     global START_TIME
@@ -1453,7 +1460,7 @@ def main():
     SYNC_TIME = ARGS.sync
     PREP_TIME = ARGS.prep
     FOCUS_TIME = ARGS.focus
-
+    SYNC_SEED = ARGS.sync_mode
     # NOTE: default is 1 core
     JOBS = ARGS.jobs
     timeout = ARGS.timeout

@@ -29,6 +29,7 @@ class ArgsParser(Tap):
     timeout: str
     empty_seed: bool
     crash_mode: str
+    sync_mode: bool
     enfuzz: int
     focus_one: Optional[str]
     diff_threshold: int
@@ -109,6 +110,12 @@ class ArgsParser(Tap):
                           action="store_true",
                           default=False,
                           help="parallel mode/multi-core implementaion")
+
+        self.add_argument("--sync_mode",
+                          "-s",
+                          action="store_false",
+                          default=True,
+                          help="seed sync mode")
         self.add_argument("--tar",
                           action="store_true",
                           default=False,
