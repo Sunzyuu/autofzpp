@@ -27,3 +27,4 @@ build/
 .vscode/
 /logs
 /autofz/output*
+/autofz/output

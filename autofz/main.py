@@ -1161,6 +1161,7 @@ class Schedule_Autofz(Schedule_Base):
 
         self.diff_round = 0
         self.has_winner_round = False
+        self.seed_all_sync_count = 0
 
         self.dynamic_prep_time_round = 0
         self.dynamic_focus_time_round = 0
@@ -1190,8 +1191,9 @@ class Schedule_Autofz(Schedule_Base):
         self.diff_threshold_round = self.diff_threshold
 
         global OUTPUT
-        sync_success, seed_sync_count = do_sync(self.fuzzers, OUTPUT)
-        logger.info(f'seed_sync_count: {seed_sync_count}')
+        sync_success, seed_sync_count1 = do_sync(self.fuzzers, OUTPUT)
+        logger.info(f'pre_seed_sync_count: {seed_sync_count1}')
+        self.seed_all_sync_count += seed_sync_count1
 
         # logger.info("one_round fuzzers")
         # logger.info(self.fuzzers)
@@ -1252,7 +1254,11 @@ class Schedule_Autofz(Schedule_Base):
         # focus session
         self.cov_before_focus = after_prep_fuzzer_info
 
-        do_sync(self.fuzzers, OUTPUT)
+        sync_success, seed_sync_count2 = do_sync(self.fuzzers, OUTPUT)
+        logger.info(f'focus_seed_sync_count: {seed_sync_count2}')
+        logger.info(f'all_seed_sync_count: {self.seed_all_sync_count}')
+        self.seed_all_sync_count += seed_sync_count2
+        seed_sync_count = seed_sync_count1 + seed_sync_count2
 
         if has_winner:
             self.dynamic_focus_time_round = self.prep_time - self.dynamic_prep_time_round + self.focus_time
@@ -1290,7 +1296,6 @@ class Schedule_Autofz(Schedule_Base):
         assert (self.dynamic_prep_time_round +
                 self.dynamic_focus_time_round) == (self.prep_time +
                                                    self.focus_time)
-        # focus_time =
 
         append_log(
             'round', {
@@ -1318,6 +1323,8 @@ class Schedule_Autofz(Schedule_Base):
                 self.first_round,
                 'seed_sync_count':
                 seed_sync_count,
+                'seed_all_sync_count':
+                self.seed_all_sync_count,
                 'before_prep_fuzzer_info':
                 compress_fuzzer_info(self.fuzzers,
                                      self.before_prep_fuzzer_info),
@@ -1402,7 +1409,7 @@ def main():
     global RUNNING
     global PARALLEL
     random.seed()
-    delete_folder("/tmp/pycharm_project_923/output")
+    delete_folder("./output")
     ARGS = cli.ArgsParser().parse_args()
     TARGET = ARGS.target
     unsuppored_fuzzers = config['target'][TARGET].get('unsupported', [])
