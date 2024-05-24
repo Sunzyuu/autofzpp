@@ -192,6 +192,7 @@ def sync2(target: str, fuzzers: Fuzzers, host_root_dir: Path):
                 test_case_path = w.test_case_queue[i]
                 if w._ignore_test_case(test_case_path):
                     continue
+                # logger.info(test_case_path.parts)
                 test_case = TestCase(test_case_path)
                 processed_checksum[fuzzer].add(test_case.checksum)
                 if test_case.checksum not in global_processed_checksum:
