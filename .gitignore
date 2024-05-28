@@ -28,3 +28,4 @@ build/
 /logs
 /autofz/output*
 /autofz/output
+/autofz/.idea
