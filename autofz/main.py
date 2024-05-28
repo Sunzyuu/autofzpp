@@ -874,8 +874,8 @@ class Schedule_Base(SchedulingAlgorithm):
             if fuzzer not in new_cpu_assign:
                 update_fuzzer_limit(fuzzer, 0)
         # 分配给qsym 的cpu永远为1
-        for fuzzer in QSYM:
-            update_fuzzer_limit(fuzzer, 1)
+        # for fuzzer in QSYM:
+        #     update_fuzzer_limit(fuzzer, 1)
         # 框架停止运行，给fuzzer运行 focus_time 的时间
         sleep(focus_time)
         # 函数返回结果是新一轮的global_bitmap是否比上一轮的global_bitmap大
@@ -1548,18 +1548,18 @@ def main():
     algorithm = None
 
     # 到这里已经完成了所有fuzzer的启动过程，还有文件监视器的启动
-    if 'qsym' in FUZZERS or 'angora' in FUZZERS:
-        if 'qsym' in FUZZERS and JOBS >= 2:
-            FUZZERS.remove('qsym')
-            QSYM.append("qsym")
-            JOBS = JOBS - 1
-
-        if 'angora' in FUZZERS and JOBS >= 2:
-            FUZZERS.remove('angora')
-            QSYM.append("angora")
-            JOBS = JOBS - 1
-    logger.info(f'FUZZERS: {FUZZERS}')
-    logger.info(f'DSE: {QSYM}')
+    # if 'qsym' in FUZZERS or 'angora' in FUZZERS:
+    #     if 'qsym' in FUZZERS and JOBS >= 2:
+    #         FUZZERS.remove('qsym')
+    #         QSYM.append("qsym")
+    #         JOBS = JOBS - 1
+    #
+    #     if 'angora' in FUZZERS and JOBS >= 2:
+    #         FUZZERS.remove('angora')
+    #         QSYM.append("angora")
+    #         JOBS = JOBS - 1
+    # logger.info(f'FUZZERS: {FUZZERS}')
+    # logger.info(f'DSE: {QSYM}')
     # 这里剔除混合模糊测试器 qsym angora，这样后面的cpu资源分配就与这两个fuzzer无关了
 
     # foucs one fuzzer; equal to running a single individual fuzzer
