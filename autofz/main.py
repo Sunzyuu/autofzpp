@@ -57,6 +57,8 @@ SYNC_TIME: int
 
 SYNC_SEED: bool
 
+SYNC_SEED_COUNT: int = 0
+
 COVERAGE_UPDATE_TIME = config['scheduler']['coverage_update_time']
 
 FUZZERS: Fuzzers = []
@@ -440,6 +442,7 @@ def thread_update_fuzzer_log(fuzzers):
 
 def maybe_get_fuzzer_info(fuzzers) -> Optional[Coverage]:
     logger.debug('get_fuzzer_info called')
+    global SYNC_SEED_COUNT
 
     new_fuzzer_info = nested_dict()
     for fuzzer in fuzzers:
@@ -480,6 +483,7 @@ def maybe_get_fuzzer_info(fuzzers) -> Optional[Coverage]:
     new_fuzzer_info['global_coverage'] = cov
     new_fuzzer_info['global_unique_bugs'] = unique_bugs
     new_fuzzer_info['global_bitmap'] = bitmap
+    new_fuzzer_info['seed_sync_count'] = SYNC_SEED_COUNT
     logger.debug(f'global has line_coverge {cov["line"]}, bugs {unique_bugs}')
 
     return new_fuzzer_info
@@ -1192,7 +1196,7 @@ class Schedule_Autofz(Schedule_Base):
         round_start_time = time.time()
         self.diff_threshold_round = self.diff_threshold
 
-        global OUTPUT, SYNC_SEED
+        global OUTPUT, SYNC_SEED, SYNC_SEED_COUNT
         seed_sync_count1 = 0
         seed_sync_count2 = 0
         if SYNC_SEED:
@@ -1303,7 +1307,7 @@ class Schedule_Autofz(Schedule_Base):
         assert (self.dynamic_prep_time_round +
                 self.dynamic_focus_time_round) == (self.prep_time +
                                                    self.focus_time)
-
+        SYNC_SEED_COUNT = self.seed_all_sync_count
         append_log(
             'round', {
                 'round_num':
@@ -1409,7 +1413,7 @@ def init_cgroup():
 
 
 def main():
-    global LOG, ARGS, TARGET, FUZZERS, TARGET, SYNC_TIME, PREP_TIME, SYNC_SEED
+    global LOG, ARGS, TARGET, FUZZERS, TARGET, SYNC_TIME, PREP_TIME, SYNC_SEED, SYNC_SEED_COUNT
     global FOCUS_TIME, JOBS, OUTPUT, INPUT, LOG_DATETIME, LOG_FILE_NAME
     global CPU_ASSIGN
     global START_TIME
