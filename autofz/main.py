@@ -18,7 +18,7 @@ import shutil
 from abc import abstractmethod
 from collections import deque
 from pathlib import Path
-from typing import Deque, Dict, List, Optional
+from typing import Deque, Dict, List, Optional, Tuple
 
 # FIXME
 # if __package__ is None:
@@ -401,7 +401,7 @@ def resume(fuzzer, jobs=1, input_dir=None, empty_seed=False):
     fuzzer_driver.main(**kw)
 
 
-def do_sync(fuzzers: Fuzzers, host_root_dir: Path):
+def do_sync(fuzzers: Fuzzers, host_root_dir: Path) -> Tuple[bool, int]:
     global QSYM
     logger.info('do sync once')
     logger.info(fuzzers)
