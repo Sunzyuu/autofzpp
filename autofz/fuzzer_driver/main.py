@@ -10,7 +10,7 @@ from .afl import (AFLController, AFLFASTController, AFLSMARTController,FAIRFUZZC
                   RADAMSAController, REDQUEENController)
 from .angora import ANGORAController
 from .libfuzzer import LIBFUZZERController
-from .qsym import QSYMController
+from .qsym_noafl import QSYMController
 
 
 def str_to_class(classname):
