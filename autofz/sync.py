@@ -150,7 +150,7 @@ def sync_test_case(target, fuzzer, host_root_dir, testcase):
     fuzzer_root_dir = os.path.join(host_root_dir, target, fuzzer)
     autofz_dir = os.path.join(fuzzer_root_dir, 'autofz')
     queue_dir = os.path.join(autofz_dir, 'queue')
-    logger.info(f'copy {testcase.filename} to {queue_dir}')
+    logger.debug(f'copy {testcase.filename} to {queue_dir}')
     new_name = new_afl_filename(fuzzer)
     new_filename = os.path.join(queue_dir, new_name)
 
@@ -256,7 +256,7 @@ def sync2(target: str, fuzzers: Fuzzers, host_root_dir: Path):
                 if test_case.checksum not in processed_checksum[fuzzer]:
                     processed_checksum[fuzzer].add(test_case.checksum)
                     # do sync!
-                    seed_sync_count = seed_sync_count + 1
+                    # seed_sync_count = seed_sync_count + 1
                     sync_test_case(target, fuzzer, host_root_dir, test_case)
         for test_case in qsym_new_test_cases:
             if fuzzer == 'qsym':
@@ -282,6 +282,7 @@ def sync2(target: str, fuzzers: Fuzzers, host_root_dir: Path):
 def is_crashes_or_cov(test_case_path: Path):
     if test_case_path.parts[-2] == "crashes" or "+cov" in test_case_path.name:
         return True
+    return False
 
 def test():
     with open('/tmp/test_hash', 'w+') as f:

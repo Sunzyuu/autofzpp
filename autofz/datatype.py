@@ -230,7 +230,7 @@ class Bugmap(object):
 def test_bitmap():
     print(Bitmap.BITMAP_SIZE)
     empty_bitmap = Bitmap.empty()
-    bitmap_path = os.path.join("/work/autofz/autofzpp/autofz/jq_new_0518", 'eval', 'qsym', 'bitmap')
+    bitmap_path = os.path.join("/work/autofz/autofzpp/output1/eval/qsym", 'bitmap')
     bm = Bitmap(bitmap_path=bitmap_path)
     print(bm)
     print(len(bm.bitmap))

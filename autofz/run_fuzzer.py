@@ -1,3 +1,4 @@
+import os
 from time import sleep
 from typing import Dict
 INPUT_DIR = 'queue'
