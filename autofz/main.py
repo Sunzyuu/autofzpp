@@ -71,6 +71,8 @@ CPU_ASSIGN: Dict[Fuzzer, float] = {}
 
 JOBS = 1
 
+QSYM_JOBS = 1
+
 ARGS: cli.ArgsParser
 
 START_TIME: float = 0.0
@@ -434,6 +436,7 @@ def update_fuzzer_log(fuzzers):
 
 
 def thread_update_fuzzer_log(fuzzers):
+    # 每60s记录一次日志
     update_time = min(60, PREP_TIME, SYNC_TIME, FOCUS_TIME)
     while not is_end():
         update_fuzzer_log(fuzzers)
@@ -819,8 +822,8 @@ class Schedule_Base(SchedulingAlgorithm):
                 update_fuzzer_limit(fuzzer, JOBS / num_prep)
             else:
                 update_fuzzer_limit(fuzzer, 0)
-        for fuzzer in QSYM:
-            update_fuzzer_limit(fuzzer, 1)
+        # for fuzzer in QSYM:
+        #     update_fuzzer_limit(fuzzer, QSYM_JOBS)
 
         remain_time = prep_time
         while remain_time > 0:
@@ -877,16 +880,16 @@ class Schedule_Base(SchedulingAlgorithm):
 
     def focus_cpu_assign_parallel(self, new_cpu_assign,
                                   focus_time: int) -> bool:
-        global OUTPUT, FUZZERS, JOBS
+        global OUTPUT, FUZZERS, JOBS, QSYM_JOBS
         logger.debug('focus parallel')
         for fuzzer, new_cpu in new_cpu_assign.items():
             update_fuzzer_limit(fuzzer, new_cpu)
         for fuzzer in FUZZERS:
             if fuzzer not in new_cpu_assign:
                 update_fuzzer_limit(fuzzer, 0)
-        # 分配给qsym 的cpu永远为1
-        for fuzzer in QSYM:
-            update_fuzzer_limit(fuzzer, 1)
+        # 分配给qsym 的cpu永远为 QSYM_JOBS
+        # for fuzzer in QSYM:
+        #     update_fuzzer_limit(fuzzer, QSYM_JOBS)
         # 框架停止运行，给fuzzer运行 focus_time 的时间
         sleep(focus_time)
         # 函数返回结果是新一轮的global_bitmap是否比上一轮的global_bitmap大
@@ -1208,7 +1211,7 @@ class Schedule_Autofz(Schedule_Base):
         seed_sync_count2 = 0
         if SYNC_SEED:
             sync_success, seed_sync_count1 = do_sync(self.fuzzers, OUTPUT)
-            logger.info(f'pre_seed_sync_count: {seed_sync_count1}')
+            # logger.info(f'pre_seed_sync_count: {seed_sync_count1}')
             self.seed_all_sync_count += seed_sync_count1
 
 
@@ -1273,7 +1276,7 @@ class Schedule_Autofz(Schedule_Base):
 
         if SYNC_SEED:
             sync_success, seed_sync_count2 = do_sync(self.fuzzers, OUTPUT)
-            logger.info(f'focus_seed_sync_count: {seed_sync_count2}')
+            # logger.info(f'focus_seed_sync_count: {seed_sync_count2}')
             self.seed_all_sync_count += seed_sync_count2
         logger.info(f'all_seed_sync_count: {self.seed_all_sync_count}')
         seed_sync_count = seed_sync_count1 + seed_sync_count2
@@ -1421,14 +1424,14 @@ def init_cgroup():
 
 def main():
     global LOG, ARGS, TARGET, FUZZERS, TARGET, SYNC_TIME, PREP_TIME, SYNC_SEED, SYNC_SEED_COUNT
-    global FOCUS_TIME, JOBS, OUTPUT, INPUT, LOG_DATETIME, LOG_FILE_NAME
+    global FOCUS_TIME, JOBS, QSYM_JOBS, OUTPUT, INPUT, LOG_DATETIME, LOG_FILE_NAME
     global CPU_ASSIGN
     global START_TIME
     global RUNNING
     global PARALLEL
     random.seed()
-    delete_folder("./output")
     ARGS = cli.ArgsParser().parse_args()
+    delete_folder(ARGS.output)
     TARGET = ARGS.target
     unsuppored_fuzzers = config['target'][TARGET].get('unsupported', [])
     logger.debug(f'autofz args is {ARGS}')
@@ -1491,7 +1494,14 @@ def main():
 
     # setup cgroup
     init_cgroup()
+    count = 0
+    if not (ARGS.focus_one or ARGS.enfuzz):
+        for fuzzer in FUZZERS:
+            if fuzzer != 'qsym':
+                count += 1
+    QSYM_JOBS = JOBS - count
 
+    JOBS = JOBS - QSYM_JOBS
     # setup fuzzers
     for fuzzer in FUZZERS:
         if ARGS.focus_one and fuzzer != ARGS.focus_one: continue
@@ -1508,12 +1518,20 @@ def main():
                   input_dir=INPUT,
                   empty_seed=ARGS.empty_seed)
         else:
-            start(fuzzer=fuzzer,
-                  output_dir=OUTPUT,
-                  timeout=timeout,
-                  jobs=JOBS,
-                  input_dir=INPUT,
-                  empty_seed=ARGS.empty_seed)
+            if fuzzer == 'qsym':
+                start(fuzzer=fuzzer,
+                      output_dir=OUTPUT,
+                      timeout=timeout,
+                      jobs=QSYM_JOBS,
+                      input_dir=INPUT,
+                      empty_seed=ARGS.empty_seed)
+            else:
+                start(fuzzer=fuzzer,
+                      output_dir=OUTPUT,
+                      timeout=timeout,
+                      jobs=JOBS,
+                      input_dir=INPUT,
+                      empty_seed=ARGS.empty_seed)
 
         coverage.thread_run_fuzzer(TARGET,
                                    fuzzer,
@@ -1539,10 +1557,15 @@ def main():
 
         # pause current fuzzer and wait others to start up
         if not ARGS.focus_one:
-            pause(fuzzer=fuzzer,
-                  jobs=JOBS,
-                  input_dir=INPUT,
-                  empty_seed=ARGS.empty_seed)
+            if fuzzer != 'qsym':
+                pause(fuzzer=fuzzer,
+                      jobs=JOBS,
+                      input_dir=INPUT,
+                      empty_seed=ARGS.empty_seed)
+            # else:
+                # update_fuzzer_limit('qsym', QSYM_JOBS)
+                # update_fuzzer_limit('afl', 1)
+
 
     LOG_DATETIME = f'{datetime.datetime.now():%Y-%m-%d-%H-%M-%S}'
     LOG_FILE_NAME = f'{TARGET}_{LOG_DATETIME}.json'
@@ -1559,18 +1582,20 @@ def main():
     algorithm = None
 
     # 到这里已经完成了所有fuzzer的启动过程，还有文件监视器的启动
-    if 'qsym' in FUZZERS or 'angora' in FUZZERS:
-        if 'qsym' in FUZZERS and JOBS >= 2:
-            FUZZERS.remove('qsym')
-            QSYM.append("qsym")
-            JOBS = JOBS - 1
+    if not (ARGS.focus_one and ARGS.enfuzz):
+        # if 'qsym' in FUZZERS or 'angora' in FUZZERS:
+        if 'qsym' in FUZZERS:
+            if 'qsym' in FUZZERS:
+                FUZZERS.remove('qsym')
+                QSYM.append("qsym")
+                # JOBS = JOBS - 1
 
-        if 'angora' in FUZZERS and JOBS >= 2:
-            FUZZERS.remove('angora')
-            QSYM.append("angora")
-            JOBS = JOBS - 1
-    logger.info(f'FUZZERS: {FUZZERS}')
-    logger.info(f'DSE: {QSYM}')
+            # if 'angora' in FUZZERS and JOBS >= 2:
+            #     FUZZERS.remove('angora')
+            #     QSYM.append("angora")
+            #     JOBS = JOBS - 1
+        logger.info(f'FUZZERS: {FUZZERS}')
+        logger.info(f'DSE: {QSYM}')
     # 这里剔除混合模糊测试器 qsym angora，这样后面的cpu资源分配就与这两个fuzzer无关了
 
     # foucs one fuzzer; equal to running a single individual fuzzer
@@ -1590,7 +1615,7 @@ def main():
                                       prep_time=PREP_TIME,
                                       focus_time=FOCUS_TIME,
                                       diff_threshold=diff_threshold)
-        algorithm = 'autofz'
+        algorithm = 'mulitfuzz'
 
     assert scheduler
     assert algorithm
@@ -1614,7 +1639,7 @@ def main():
     LOG['end_time'] = time.time()
 
     write_log()
-    logger.info('autofz terminating')
+    logger.info('mulitfuzz terminating')
     cleanup(0)
 
 
