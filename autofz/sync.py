@@ -166,7 +166,7 @@ def sync_qsym_seed(target, fuzzer, host_root_dir, testcase):
     autofz_dir = os.path.join(fuzzer_root_dir, 'qsym')
     queue_dir = os.path.join(autofz_dir, 'queue')
     logger.info(f'copy {testcase.filename} to {queue_dir}')
-    new_name = new_afl_filename(fuzzer)
+    new_name = Path(testcase.filename).name
     new_filename = os.path.join(queue_dir, new_name)
 
     rel_path = os.path.relpath(testcase.filename,
@@ -223,7 +223,7 @@ def sync2(target: str, fuzzers: Fuzzers, host_root_dir: Path):
                     test_case = TestCase(test_case_path)
                     # 将qsym的种子都存放到qsym_new_test_cases中，在下面的同步种子中，将其同步到其他fuzzer的qsym/queue中
                     qsym_new_test_cases.append(test_case)
-                    logger.info(test_case.filename)
+                    # logger.info(test_case.filename)
                 LAST_INDEX[w] = queue_len
         else:
             # NOTE: will also synced crashes, which sometimes will also have more coverage
@@ -249,7 +249,7 @@ def sync2(target: str, fuzzers: Fuzzers, host_root_dir: Path):
         for test_case in global_new_test_cases:
             if fuzzer == 'qsym':
                 if is_crashes_or_cov(Path(test_case.filename)):
-                    logger.info(test_case.filename)
+                    # logger.info(test_case.filename)
                     processed_checksum[fuzzer].add(test_case.checksum)
                     sync_test_case(target, fuzzer, host_root_dir, test_case)
             else:
@@ -258,12 +258,17 @@ def sync2(target: str, fuzzers: Fuzzers, host_root_dir: Path):
                     # do sync!
                     seed_sync_count = seed_sync_count + 1
                     sync_test_case(target, fuzzer, host_root_dir, test_case)
-
+        for test_case in qsym_new_test_cases:
+            if fuzzer == 'qsym':
+                continue
+            # 同步到除 qsym 以外的其他fuzzer中
+            sync_qsym_seed(target, fuzzer, host_root_dir, test_case)
 
     #  上面的代码是实现从所有其他的fuzzer的queue/crashes目录中同步到其他fuzzer的autofz/queue目录下
     #  afl aflfast fairfuzz qsym四个fuzzer，排除qsym
     del global_new_test_cases
     del new_test_cases
+    del qsym_new_test_cases
     # wait some file system writing, doesn't affect our symbolic link but for fuzzers
     time.sleep(0.1)
     return seed_sync_count
