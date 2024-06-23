@@ -636,7 +636,38 @@ def run_command(command):
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return process
 
-
+def get_coverage():
+    targets = ['exiv2', 'tiffsplit', 'infotocap', 'nm', 'pdftotext', 'jhead', 'mujs', 'tcpdump', 'objdump']
+    fuzzers = ['afl', 'aflfast', 'fairfuzz']
+    output_root = "/work/autofz"
+    result = {}
+    for target in targets:
+        result[target] = {}
+        for fuzzer in fuzzers:
+            total_coverage = 0
+            count = 0
+            for i in range(1, 6):
+                output = output_root + "/" + target + "/" + fuzzer + "/" + str(i)
+                fuzzer_stats = output + "/" + "fuzzer_stats"
+                print(fuzzer_stats)
+                if os.path.exists(fuzzer_stats):
+                    with open(fuzzer_stats, 'r') as f:
+                        lines = f.readlines()
+                        for line in lines:
+                            if line.startswith('bitmap_cvg'):
+                                print(line)
+                                coverage_value = float(line.split(':')[1].strip()[:-1]) * 0.01
+                                total_coverage += coverage_value
+                                print(coverage_value)
+                                count += 1
+            if count > 0:
+                average_coverage = total_coverage / count
+                result[target][fuzzer] = average_coverage * 65535
+                print(f'{target}: {fuzzer}: {average_coverage:.2f}')
+            else:
+                result[target][fuzzer] = 0
+    for res in result:
+        print(f'{res}: {result[res]}')
 
 import sys
 if __name__ == '__main__':
