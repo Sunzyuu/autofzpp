@@ -150,6 +150,10 @@ class Watcher(ABC):
     def _ignore_test_case(self, test_case_path: Path) -> bool:
         return False
 
+    def _is_high_value_seed(self, test_case_path: Path):
+        if test_case_path.parts[-2] == "crashes" or "+cov" in test_case_path.name:
+            return True
+
     def _get_test_case_type(self, test_case_path: Path) -> SeedType:
         return SeedType.NORMAL
 
@@ -199,11 +203,11 @@ class AFLWatcher(Watcher):
     def _ignore_test_case(self, test_case_path: Path) -> bool:
         # Ignore files that do not conform to the naming convention
         # logger.info(f"seed name:{test_case_path.parts}")
-        seed_type = test_case_path.parts[-2]
-        if seed_type == "crashes":
-            return False
-        if seed_type == "hang":
-            return True
+        # seed_type = test_case_path.parts[-2]
+        # if seed_type == "crashes":
+        #     return False
+        # if seed_type == "hang":
+        #     return True
         if not test_case_path.name.startswith("id:"):
             return True
         #
@@ -211,8 +215,8 @@ class AFLWatcher(Watcher):
             return True
         if 'sync' in test_case_path.name:
             return True
-        if "+cov" not in test_case_path.name:
-            return True
+        # if "+cov" not in test_case_path.name:
+        #     return True
         return False
 
     def _get_test_case_type(self, test_case_path: Path) -> SeedType:
